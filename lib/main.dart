@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'api_keys.dart';  // API 키 import
 
 void main() {
   runApp(const MyApp());
@@ -74,8 +75,7 @@ class Book {
   }
 }
 
-// 알라딘 API 키 (발급받은 키로 교체하세요!)
-const String ALADIN_API_KEY = 'ttbfriend100n1609001';
+
 
 // 알라딘 API로 책 정보 가져오기
 Future<Map<String, String>> fetchBookInfoFromAladin(String isbn) async {
