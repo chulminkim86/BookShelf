@@ -62,6 +62,7 @@ class Book {
   String? category;         // 카테고리
   List<String>? tags;       // 태그
   String? memo;             // 메모
+  String? excerpt;          //발췌
 
   Book({
     required this.id,
@@ -78,6 +79,7 @@ class Book {
     this.category,
     this.tags,
     this.memo,
+    this.excerpt,
   });
 
   Map<String, dynamic> toJson() {
@@ -96,6 +98,7 @@ class Book {
       'category': category,
       'tags': tags,
       'memo': memo,
+      'excerpt': excerpt,
     };
   }
 
@@ -115,6 +118,7 @@ class Book {
       category: json['category'],
       tags: json['tags'] != null ? List<String>.from(json['tags']) : null,
       memo: json['memo'],
+      excerpt: json['excerpt'],
     );
   }
 }

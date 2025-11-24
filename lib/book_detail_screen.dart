@@ -21,6 +21,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   late TextEditingController memoController;
   late TextEditingController categoryController;
   late TextEditingController tagController;
+  late TextEditingController excerptController;
   
   String? selectedReadingStatus;
   int selectedRating = 0;
@@ -35,6 +36,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     memoController = TextEditingController(text: widget.book.memo ?? '');
     categoryController = TextEditingController(text: widget.book.category ?? '');
     tagController = TextEditingController();
+    excerptController = TextEditingController(text: widget.book.excerpt ?? '');
     
     selectedReadingStatus = widget.book.readingStatus ?? 'want';
     selectedRating = widget.book.rating ?? 0;
@@ -53,6 +55,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     memoController.dispose();
     categoryController.dispose();
     tagController.dispose();
+    excerptController.dispose();
     super.dispose();
   }
 
@@ -117,6 +120,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     widget.book.category = categoryController.text.isEmpty ? null : categoryController.text;
     widget.book.tags = tags.isEmpty ? null : tags;
     widget.book.memo = memoController.text.isEmpty ? null : memoController.text;
+    widget.book.excerpt = excerptController.text.isEmpty ? null : excerptController.text;
     
     widget.onBookUpdated(widget.book);
     Navigator.pop(context);
@@ -455,7 +459,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: memoController,
-                      maxLines: 5,
+                      maxLines: 3,
                       style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         hintText: '책에 대한 메모를 입력하세요...',
@@ -468,7 +472,48 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 ),
               ),
             ),
-            
+
+            const SizedBox(height: 16),
+
+            // 발췌문 카드 (새로 추가!)
+            Card(
+              color: Colors.white,
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '발췌문',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: excerptController,
+                      maxLines: 5,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        hintText: '인상 깊었던 구절을 기록하세요...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 80), // 하단 여백
+
             const SizedBox(height: 80), // 하단 여백
           ],
         ),
