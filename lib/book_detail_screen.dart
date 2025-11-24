@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'dart:io';
 
 // Book 클래스는 main.dart에서 import 해야 함
 // import 'main.dart' 에서 Book 가져오기
@@ -22,6 +26,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   late TextEditingController categoryController;
   late TextEditingController tagController;
   late TextEditingController excerptController;
+  final ImagePicker _picker = ImagePicker();
+  final TextRecognizer _textRecognizer = TextRecognizer();
   
   String? selectedReadingStatus;
   int selectedRating = 0;
@@ -56,6 +62,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     categoryController.dispose();
     tagController.dispose();
     excerptController.dispose();
+    _textRecognizer.close();
     super.dispose();
   }
 
@@ -109,6 +116,100 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     setState(() {
       tags.remove(tag);
     });
+  }
+  // 카메라로 촬영
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        await _processImage(image.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('카메라 오류: $e')),
+      );
+    }
+  }
+
+// 갤러리에서 선택
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        await _processImage(image.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('갤러리 오류: $e')),
+      );
+    }
+  }
+
+// 이미지에서 텍스트 추출 (OCR)
+  Future<void> _processImage(String imagePath) async {
+    // 로딩 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('텍스트 인식 중...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final inputImage = InputImage.fromFilePath(imagePath);
+      final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
+
+      // 추출된 텍스트
+      String extractedText = recognizedText.text;
+
+      // 로딩 닫기
+      Navigator.pop(context);
+
+      if (extractedText.isNotEmpty) {
+        setState(() {
+          // 기존 텍스트가 있으면 줄바꿈 후 추가
+          if (excerptController.text.isNotEmpty) {
+            excerptController.text += '\n\n$extractedText';
+          } else {
+            excerptController.text = extractedText;
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('텍스트가 추가되었습니다!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('텍스트를 인식할 수 없습니다')),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('OCR 오류: $e')),
+      );
+    }
   }
 
   // 저장
@@ -475,7 +576,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
             const SizedBox(height: 16),
 
-            // 발췌문 카드 (새로 추가!)
+            // 발췌문 카드
             Card(
               color: Colors.white,
               elevation: 1,
@@ -507,10 +608,43 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+
+                    // 카메라/갤러리 버튼 (새로 추가!)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _pickImageFromCamera,
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text('사진 촬영'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.black87,
+                              side: BorderSide(color: Colors.grey.shade300),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _pickImageFromGallery,
+                            icon: const Icon(Icons.photo_library),
+                            label: const Text('갤러리'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.black87,
+                              side: BorderSide(color: Colors.grey.shade300),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
+
 
             const SizedBox(height: 80), // 하단 여백
 
