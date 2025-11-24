@@ -280,9 +280,9 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: Color(0xFFFEFEFC),
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Color(0xFFB0A7A0),
-        selectedItemColor: Color(0xFF292929),
-        unselectedItemColor: Color(0xFFEDEDED),
+        backgroundColor: Color(0xFF392F31),
+        selectedItemColor: Color(0xFFEDEDED),
+        unselectedItemColor: Color(0xFF808080),
         elevation: 8,
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -316,6 +316,9 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
+  // 선택된 태그들을 저장하는 Set
+  Set<String> selectedTags = {};
+
   @override
   Widget build(BuildContext context) {
     // 출처별 통계
@@ -323,17 +326,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final googleCount = widget.books.where((b) => b.source == 'google').length;
     final manualCount = widget.books.where((b) => b.source == 'manual').length;
     final totalCount = widget.books.length;
-
-    // 출판사별 통계 (Top 5)
-    final publisherMap = <String, int>{};
-    for (var book in widget.books) {
-      if (book.publisher != '출판사 미상') {
-        publisherMap[book.publisher] = (publisherMap[book.publisher] ?? 0) + 1;
-      }
-    }
-    final topPublishers = publisherMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final top5Publishers = topPublishers.take(5).toList();
 
     // 저자별 통계 (Top 5)
     final authorMap = <String, int>{};
@@ -349,6 +341,50 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     // 최근 추가한 책 (최신 5권)
     final recentBooks = widget.books.reversed.take(5).toList();
 
+    // 태그별 통계 계산
+    final tagMap = <String, int>{};
+    for (var book in widget.books) {
+      if (book.tags != null && book.tags!.isNotEmpty) {
+        for (var tag in book.tags!) {
+          tagMap[tag] = (tagMap[tag] ?? 0) + 1;
+        }
+      } else {
+        // 태그가 없는 책
+        tagMap['태그 없음'] = (tagMap['태그 없음'] ?? 0) + 1;
+      }
+    }
+    final sortedTags = tagMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // 선택된 태그로 필터링된 책 목록
+    List<Book> filteredBooks = [];
+    if (selectedTags.isNotEmpty) {
+      for (var book in widget.books) {
+        bool matches = false;
+
+        // "태그 없음"이 선택된 경우
+        if (selectedTags.contains('태그 없음')) {
+          if (book.tags == null || book.tags!.isEmpty) {
+            matches = true;
+          }
+        }
+
+        // 다른 태그가 선택된 경우
+        if (book.tags != null) {
+          for (var tag in selectedTags) {
+            if (tag != '태그 없음' && book.tags!.contains(tag)) {
+              matches = true;
+              break;
+            }
+          }
+        }
+
+        if (matches) {
+          filteredBooks.add(book);
+        }
+      }
+    }
+
     return Scaffold(
       backgroundColor: Color(0xFFFEFEFC),
       appBar: AppBar(
@@ -359,195 +395,313 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       body: widget.books.isEmpty
           ? const Center(
-              child: Text(
-                '책을 추가하면\n통계가 표시됩니다 📊',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            )
+        child: Text(
+          '책을 추가하면\n통계가 표시됩니다 📊',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 총 책 권수
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 총 책 권수
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.book, size: 40, color: Colors.blue),
+                    const SizedBox(width: 10),
+                    Column(
+                      children: [
+                        const Text(
+                          '총 책 권수',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                        Text(
+                          '$totalCount권',
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 저자별 통계
+            if (top5Authors.isNotEmpty) ...[
+              const Text(
+                '저자별 TOP 5',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                color: Colors.white,
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: top5Authors.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final author = entry.value;
+                      return Column(
                         children: [
-                          const Icon(Icons.book, size: 40, color: Colors.blue),
-                          const SizedBox(width: 10),
-                          Column(
+                          if (index > 0) const Divider(),
+                          _buildRankRow(
+                            index + 1,
+                            author.key,
+                            author.value,
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // 최근 추가한 책 (이게 먼저!)
+            if (recentBooks.isNotEmpty) ...[
+              const Text(
+                '최근 추가한 책',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              const SizedBox(height: 12),
+              ...recentBooks.map((book) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  color: Colors.white,
+                  child: ListTile(
+                    leading: book.coverUrl != null && book.coverUrl!.isNotEmpty
+                        ? Image.network(
+                      book.coverUrl!,
+                      width: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.book, size: 40);
+                      },
+                    )
+                        : const Icon(Icons.book, size: 40),
+                    title: Text(
+                      book.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    subtitle: Text(
+                      book.author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: book.source == 'aladin'
+                            ? Colors.blue.shade100
+                            : book.source == 'google'
+                            ? Colors.grey.shade300
+                            : Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        book.source == 'aladin'
+                            ? '알라딘'
+                            : book.source == 'google'
+                            ? 'Google'
+                            : '수동',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: book.source == 'aladin'
+                              ? Colors.blue.shade900
+                              : book.source == 'google'
+                              ? Colors.grey.shade800
+                              : Colors.green.shade800,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+              const SizedBox(height: 20),
+            ],
+
+            // 태그 필터 섹션 (최근 추가한 책 다음!)
+            if (sortedTags.isNotEmpty) ...[
+              const Text(
+                '태그 필터',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                color: Colors.white,
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: sortedTags.map((tagEntry) {
+                      final tag = tagEntry.key;
+                      final count = tagEntry.value;
+                      final isSelected = selectedTags.contains(tag);
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            if (isSelected) {
+                              selectedTags.remove(tag);
+                            } else {
+                              selectedTags.add(tag);
+                            }
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.green
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
-                                '총 책 권수',
-                                style: TextStyle(fontSize: 16, color: Colors.white),
-                              ),
-                              Text(
-                                '$totalCount권',
-                                style: const TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
+                              if (isSelected)
+                                const Icon(
+                                  Icons.check_circle,
+                                  size: 16,
                                   color: Colors.white,
+                                ),
+                              if (isSelected) const SizedBox(width: 4),
+                              Text(
+                                '$tag $count',
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.black87,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-
-                  // 저자별 통계
-                  if (top5Authors.isNotEmpty) ...[
-                    const Text(
-                      '✍️ 저자별 TOP 5',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    const SizedBox(height: 12),
-                    Card(
-                      color: Colors.white,
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: top5Authors.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final author = entry.value;
-                            return Column(
-                              children: [
-                                if (index > 0) const Divider(),
-                                _buildRankRow(
-                                  index + 1,
-                                  author.key,
-                                  author.value,
-                                ),
-                              ],
-                            );
-                          }).toList(),
                         ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // 필터링된 책 목록 표시
+            if (selectedTags.isNotEmpty) ...[
+              Text(
+                '선택된 태그: ${selectedTags.join(", ")}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${filteredBooks.length}권의 책',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                color: Colors.white,
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: filteredBooks.isEmpty
+                      ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text(
+                        '해당 태그를 가진 책이 없습니다',
+                        style: TextStyle(color: Colors.grey),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // 최근 추가한 책
-                  if (recentBooks.isNotEmpty) ...[
-                    const Text(
-                      '📚 최근 추가한 책',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    const SizedBox(height: 12),
-                    ...recentBooks.map((book) {
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: book.coverUrl != null && book.coverUrl!.isNotEmpty
-                              ? Image.network(
-                                  book.coverUrl!,
-                                  width: 40,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.book, size: 40);
-                                  },
-                                )
-                              : const Icon(Icons.book, size: 40),
-                          title: Text(
-                            book.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.black),
-                          ),
-                          subtitle: Text(
-                            book.author,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.black87),
-                          ),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: book.source == 'aladin'
-                                  ? Colors.blue.shade100
-                                  : book.source == 'google'
-                                      ? Colors.grey.shade300
-                                      : Colors.green.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              book.source == 'aladin'
-                                  ? '알라딘'
-                                  : book.source == 'google'
-                                      ? 'Google'
-                                      : '수동',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: book.source == 'aladin'
-                                    ? Colors.blue.shade900
-                                    : book.source == 'google'
-                                        ? Colors.grey.shade800
-                                        : Colors.green.shade800,
+                  )
+                      : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: filteredBooks.map((book) {
+                      return InkWell(  // ← GestureDetector 또는 InkWell로 감싸기
+                        onTap: () {
+                          // 책 상세 페이지로 이동
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BookDetailScreen(
+                                book: book,
+                                onBookUpdated: (updatedBook) {
+                                  // 책이 수정되면 새로고침
+                                  setState(() {});
+                                },
                               ),
                             ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.book, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  book.title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
                     }).toList(),
-                  ],
-                ],
+                  ),
+                ),
               ),
-            ),
-    );
-  }
-
-  Widget _buildStatRow(String label, int count, int total, Color color) {
-    final percentage = total > 0 ? (count / total * 100).toStringAsFixed(1) : '0.0';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 16, color: Colors.white),
-            ),
-          ),
-          Text(
-            '$count권',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '($percentage%)',
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.white70,
-            ),
-          ),
-        ],
+              const SizedBox(height: 20),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -585,7 +739,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           Expanded(
             child: Text(
               name,
-              style: const TextStyle(fontSize: 16, color: Colors.white),
+              style: const TextStyle(fontSize: 16, color: Colors.black),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -595,7 +749,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black,
             ),
           ),
         ],
@@ -603,6 +757,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 }
+
 
 // 책 목록 화면
 class BookListScreen extends StatefulWidget {
