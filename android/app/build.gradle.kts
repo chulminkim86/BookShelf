@@ -29,12 +29,25 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }   
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 
+    
+    
+    
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false  // 난독화 비활성화
+            isShrinkResources = false  // 리소스 압축 비활성화
         }
     }
 }
