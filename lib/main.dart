@@ -378,7 +378,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(Icons.book, size: 40, color: Colors.blue),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 10),
                           Column(
                             children: [
                               const Text(
@@ -388,7 +388,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                               Text(
                                 '$totalCount권',
                                 style: const TextStyle(
-                                  fontSize: 32,
+                                  fontSize: 30,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -401,83 +401,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 출처별 분포
-                  const Text(
-                    '📊 출처별 분포',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    color: Colors.white,
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          _buildStatRow(
-                            '알라딘',
-                            aladinCount,
-                            totalCount,
-                            Colors.blue,
-                          ),
-                          const Divider(),
-                          _buildStatRow(
-                            'Google',
-                            googleCount,
-                            totalCount,
-                            Colors.grey,
-                          ),
-                          const Divider(),
-                          _buildStatRow(
-                            '수동',
-                            manualCount,
-                            totalCount,
-                            Colors.green,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 출판사별 통계
-                  if (top5Publishers.isNotEmpty) ...[
-                    const Text(
-                      '🏢 출판사별 TOP 5',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    const SizedBox(height: 12),
-                    Card(
-                      color: Colors.white,
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: top5Publishers.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final publisher = entry.value;
-                            return Column(
-                              children: [
-                                if (index > 0) const Divider(),
-                                _buildRankRow(
-                                  index + 1,
-                                  publisher.key,
-                                  publisher.value,
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
 
                   // 저자별 통계
                   if (top5Authors.isNotEmpty) ...[

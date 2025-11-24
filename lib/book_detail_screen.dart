@@ -220,7 +220,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '구매일',
+                          '읽기 시작한 날',
                           style: TextStyle(
                             color: Colors.black87,
                             fontWeight: FontWeight.w500,
@@ -228,7 +228,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         ),
                         TextButton.icon(
                           onPressed: _selectPurchaseDate,
-                          icon: Icon(Icons.calendar_today, size: 16),
+                          icon: Icon(Icons.calendar_today, size: 20),
                           label: Text(
                             selectedPurchaseDate != null
                                 ? '${selectedPurchaseDate!.year}-${selectedPurchaseDate!.month.toString().padLeft(2, '0')}-${selectedPurchaseDate!.day.toString().padLeft(2, '0')}'
