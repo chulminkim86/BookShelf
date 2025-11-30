@@ -125,7 +125,7 @@ class Book {
 }
 
 // 알라딘 API 키 (발급받은 키로 교체하세요!)
-const String ALADIN_API_KEY = 'YOUR_ALADIN_API_KEY_HERE';
+const String ALADIN_API_KEY = 'ttbfriend100n1609001';
 
 // 알라딘 API로 책 정보 가져오기
 Future<Map<String, String>> fetchBookInfoFromAladin(String isbn) async {

@@ -6,6 +6,118 @@ import 'dart:io';
 
 // Book 클래스는 main.dart에서 import 해야 함
 // import 'main.dart' 에서 Book 가져오기
+class SelectableTextBlock {
+  final TextBlock block;
+  bool isSelected;
+
+  SelectableTextBlock({
+    required this.block,
+    this.isSelected = false,
+  });
+}
+
+// 이미지 위에 텍스트 선택 UI를 표시하는 화면
+class TextSelectionScreen extends StatefulWidget {
+  final String imagePath;           // 촬영한 이미지 경로
+  final List<TextBlock> textBlocks; // OCR로 인식된 텍스트 블록들
+
+  const TextSelectionScreen({
+    Key? key,
+    required this.imagePath,
+    required this.textBlocks,
+  }) : super(key: key);
+
+  @override
+  State<TextSelectionScreen> createState() => _TextSelectionScreenState();
+}
+
+class _TextSelectionScreenState extends State<TextSelectionScreen> {
+  late List<SelectableTextBlock> selectableBlocks;
+
+  @override
+  void initState() {
+    super.initState();
+    // TextBlock을 SelectableTextBlock으로 변환
+    selectableBlocks = widget.textBlocks
+        .map((block) => SelectableTextBlock(block: block))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('텍스트 선택'),
+        backgroundColor: const Color(0xFF6C5CE7),
+        actions: [
+          // 완료 버튼
+          TextButton(
+            onPressed: () {
+              // 선택된 텍스트만 추출
+              final selectedText = selectableBlocks
+                  .where((block) => block.isSelected)
+                  .map((block) => block.block.text)
+                  .join('\n');
+
+              // 이전 화면으로 선택된 텍스트 반환
+              Navigator.pop(context, selectedText);
+            },
+            child: const Text(
+              '완료',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // 배경 이미지
+          Image.file(
+            File(widget.imagePath),
+            fit: BoxFit.contain,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+
+          // 텍스트 블록 위에 선택 가능한 박스들
+          ...selectableBlocks.map((selectableBlock) {
+            final block = selectableBlock.block;
+            final boundingBox = block.boundingBox;
+
+            return Positioned(
+              left: boundingBox.left,
+              top: boundingBox.top,
+              width: boundingBox.width,
+              height: boundingBox.height,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    // 탭하면 선택/해제 토글
+                    selectableBlock.isSelected = !selectableBlock.isSelected;
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: selectableBlock.isSelected
+                        ? Colors.blue.withOpacity(0.4)  // 선택됨 (파란색)
+                        : Colors.grey.withOpacity(0.2), // 선택 안됨 (회색)
+                    border: Border.all(
+                      color: selectableBlock.isSelected
+                          ? Colors.blue
+                          : Colors.grey,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+}
+
 
 class BookDetailScreen extends StatefulWidget {
   final dynamic book; // Book 타입
@@ -27,7 +139,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   late TextEditingController tagController;
   late TextEditingController excerptController;
   final ImagePicker _picker = ImagePicker();
-  final TextRecognizer _textRecognizer = TextRecognizer();
+  final TextRecognizer _textRecognizer = TextRecognizer(
+      script: TextRecognitionScript.korean
+  );
   
   String? selectedReadingStatus;
   int selectedRating = 0;
@@ -122,7 +236,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
+        imageQuality: 100,
       );
 
       if (image != null) {
@@ -180,25 +294,37 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       final inputImage = InputImage.fromFilePath(imagePath);
       final RecognizedText recognizedText = await _textRecognizer.processImage(inputImage);
 
-      // 추출된 텍스트
-      String extractedText = recognizedText.text;
-
       // 로딩 닫기
       Navigator.pop(context);
 
-      if (extractedText.isNotEmpty) {
-        setState(() {
-          // 기존 텍스트가 있으면 줄바꿈 후 추가
-          if (excerptController.text.isNotEmpty) {
-            excerptController.text += '\n\n$extractedText';
-          } else {
-            excerptController.text = extractedText;
-          }
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('텍스트가 추가되었습니다!')),
+      // 텍스트 블록이 있는지 확인
+      if (recognizedText.blocks.isNotEmpty) {
+        // 텍스트 선택 화면으로 이동
+        final selectedText = await Navigator.push<String>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TextSelectionScreen(
+              imagePath: imagePath,
+              textBlocks: recognizedText.blocks,
+            ),
+          ),
         );
+
+        // 선택된 텍스트가 있으면 추가
+        if (selectedText != null && selectedText.isNotEmpty) {
+          setState(() {
+            // 기존 텍스트가 있으면 줄바꿈 후 추가
+            if (excerptController.text.isNotEmpty) {
+              excerptController.text += '\n\n$selectedText';
+            } else {
+              excerptController.text = selectedText;
+            }
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('선택한 텍스트가 추가되었습니다!')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('텍스트를 인식할 수 없습니다')),
@@ -211,6 +337,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       );
     }
   }
+
 
   // 저장
   void _saveChanges() {
