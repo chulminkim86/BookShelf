@@ -24,6 +24,7 @@ dependencies:
   image_picker: ^1.0.5
   google_mlkit_text_recognition: ^0.12.0
   path: ^1.8.3
+  flutter_svg: ^2.0.10
 
 dev_dependencies:
   flutter_test:
@@ -32,3 +33,21 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/Logo_01.png
+    - assets/images/home_mascot_stage/
+
+  fonts:
+    - family: Spoqa Han Sans Neo
+      fonts:
+        - asset: assets/fonts/SpoqaHanSansNeo-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/SpoqaHanSansNeo-Light.ttf
+          weight: 300
+        - asset: assets/fonts/SpoqaHanSansNeo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/SpoqaHanSansNeo-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/SpoqaHanSansNeo-Bold.ttf
+          weight: 700

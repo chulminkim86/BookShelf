@@ -9,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'book_detail_screen.dart';
+import 'app_theme.dart';
+import 'login_screen.dart';
 
 
 void main() {
@@ -21,26 +23,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BookShelf',
-      theme: ThemeData(
-        colorScheme: ColorScheme(
-          brightness: Brightness.light,
-          primary: Color(0xFFF4F6DC),        // Beige (버튼)
-          onPrimary: Colors.white,
-          secondary: Color(0xFF757472),      // AppBar (변경됨)
-          onSecondary: Colors.white,
-          error: Color(0xFFB00020),
-          onError: Colors.white,
-          background: Color(0xFFFEFEFC),     // 배경 (변경됨)
-          onBackground: Color(0xFF2D2D2D),
-          surface: Color(0xFFB0A7A0),        // 카드 (변경됨)
-          onSurface: Colors.white,
-        ),
-        scaffoldBackgroundColor: Color(0xFFFEFEFC),
-        cardColor: Color(0xFFB0A7A0),
-        useMaterial3: true,
-      ),
-      home: const MainScreen(),
+      title: '내책',
+      theme: buildAppTheme(),
+      home: const LoginScreen(),
     );
   }
 }
